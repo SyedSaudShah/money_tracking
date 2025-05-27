@@ -1,7 +1,8 @@
 // screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:money_tracking/add_expense.dart';
+import 'package:money_tracking/dashboard.dart';
 
-import 'package:money_tracking/deshboard.dart';
 import 'package:money_tracking/expenselist.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,9 +17,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    DashboardTab(),
+    DashboardScreen(),
     ExpenseListScreen(),
-    AddExpenseScreen(),
+    AddExpenseScreen(type: ''),
   ];
 
   @override
@@ -46,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.analytics),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          //  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
     );

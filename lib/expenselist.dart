@@ -4,15 +4,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:money_tracking/Model/hive.dart';
 
-
 class ExpenseListScreen extends StatelessWidget {
+  const ExpenseListScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('All Expenses'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: Text('All Expenses'), elevation: 0),
       body: ValueListenableBuilder(
         valueListenable: Hive.box<Expense>('expenses').listenable(),
         builder: (context, Box<Expense> box, _) {
@@ -37,7 +35,7 @@ class ExpenseListScreen extends StatelessWidget {
           }
 
           final expenses = box.values.toList().reversed.toList();
-          
+
           return ListView.builder(
             padding: EdgeInsets.all(16),
             itemCount: expenses.length,
@@ -73,7 +71,10 @@ class ExpenseListScreen extends StatelessWidget {
                       if (expense.description != null)
                         Text(
                           expense.description!,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
                     ],
                   ),
@@ -107,53 +108,68 @@ class ExpenseListScreen extends StatelessWidget {
   void _deleteExpense(BuildContext context, Expense expense) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Delete Expense'),
-        content: Text('Are you sure you want to delete this expense?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+      builder:
+          (context) => AlertDialog(
+            title: Text('Delete Expense'),
+            content: Text('Are you sure you want to delete this expense?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  expense.delete();
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Expense deleted'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                },
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              expense.delete();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Expense deleted'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
   }
 
   Color _getCategoryColor(String category) {
     switch (category) {
-      case 'Food': return Colors.orange;
-      case 'Transport': return Colors.blue;
-      case 'Shopping': return Colors.purple;
-      case 'Entertainment': return Colors.red;
-      case 'Bills': return Colors.green;
-      case 'Health': return Colors.teal;
-      default: return Colors.grey;
+      case 'Food':
+        return Colors.orange;
+      case 'Transport':
+        return Colors.blue;
+      case 'Shopping':
+        return Colors.purple;
+      case 'Entertainment':
+        return Colors.red;
+      case 'Bills':
+        return Colors.green;
+      case 'Health':
+        return Colors.teal;
+      default:
+        return Colors.grey;
     }
   }
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case 'Food': return Icons.restaurant;
-      case 'Transport': return Icons.directions_car;
-      case 'Shopping': return Icons.shopping_bag;
-      case 'Entertainment': return Icons.movie;
-      case 'Bills': return Icons.receipt;
-      case 'Health': return Icons.local_hospital;
-      default: return Icons.money;
+      case 'Food':
+        return Icons.restaurant;
+      case 'Transport':
+        return Icons.directions_car;
+      case 'Shopping':
+        return Icons.shopping_bag;
+      case 'Entertainment':
+        return Icons.movie;
+      case 'Bills':
+        return Icons.receipt;
+      case 'Health':
+        return Icons.local_hospital;
+      default:
+        return Icons.money;
     }
   }
 }
