@@ -8,7 +8,10 @@ import 'package:money_tracking/login.dart';
 import 'package:money_tracking/profile.dart';
 
 class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
@@ -18,6 +21,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Expense> userExpenses = [];
   double totalIncome = 0.0;
   double totalExpense = 0.0;
+  bool showAllTransactions =
+      false; // Toggle between recent and all transactions
 
   @override
   void initState() {
@@ -38,6 +43,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             .where((expense) => expense.userId == currentUserId)
             .toList();
 
+    // Sort by date (newest first)
+    userExpenses.sort((a, b) => b.date.compareTo(a.date));
+
     totalIncome = userExpenses
         .where((expense) => expense.type == 'income')
         .fold(0.0, (sum, expense) => sum + expense.amount);
@@ -47,6 +55,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .fold(0.0, (sum, expense) => sum + expense.amount);
 
     setState(() {});
+  }
+
+  void _deleteExpense(Expense expense) async {
+    // Show confirmation dialog
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Delete Transaction'),
+          content: Text('Are you sure you want to delete "${expense.title}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      final expenseBox = Hive.box<Expense>('expenses');
+
+      // Find and delete the expense
+      final expenseKey = expenseBox.keys.firstWhere((key) {
+        final exp = expenseBox.get(key);
+        return exp?.userId == expense.userId &&
+            exp?.title == expense.title &&
+            exp?.amount == expense.amount &&
+            exp?.date == expense.date;
+      }, orElse: () => null);
+
+      if (expenseKey != null) {
+        await expenseBox.delete(expenseKey);
+        _loadExpenses(); // Refresh data
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transaction deleted successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   void _logout() async {
@@ -61,19 +120,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHomeScreen() {
-    // Get recent transactions
-    final recentExpenses =
-        userExpenses.take(5).toList()..sort((a, b) => b.date.compareTo(a.date));
+    // Get transactions to display
+    final transactionsToShow =
+        showAllTransactions ? userExpenses : userExpenses.take(5).toList();
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Balance Cards
+          // Balance Cards - Fixed with Flexible
           Row(
             children: [
-              Expanded(
+              Flexible(
                 child: _buildBalanceCard(
                   'Total Income',
                   totalIncome,
@@ -82,7 +141,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               SizedBox(width: 15),
-              Expanded(
+              Flexible(
                 child: _buildBalanceCard(
                   'Total Expense',
                   totalExpense,
@@ -101,6 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             isFullWidth: true,
           ),
           SizedBox(height: 30),
+
           // Quick Actions
           Text(
             'Quick Actions',
@@ -133,17 +193,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           SizedBox(height: 30),
-          // Recent Transactions
-          Text(
-            'Recent Transactions',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+
+          // Transactions Section Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  showAllTransactions
+                      ? 'All Transactions'
+                      : 'Recent Transactions',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ),
+              if (userExpenses.length > 5)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      showAllTransactions = !showAllTransactions;
+                    });
+                  },
+                  child: Text(
+                    showAllTransactions
+                        ? 'Show Recent'
+                        : 'Show All (${userExpenses.length})',
+                    style: TextStyle(color: Colors.teal),
+                  ),
+                ),
+            ],
           ),
           SizedBox(height: 15),
-          recentExpenses.isEmpty
+
+          // Transactions List
+          userExpenses.isEmpty
               ? Container(
                 padding: EdgeInsets.all(40),
                 child: Column(
@@ -154,12 +240,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       'No transactions yet',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Start by adding your first transaction',
+                      style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                    ),
                   ],
                 ),
               )
               : Column(
                 children:
-                    recentExpenses
+                    transactionsToShow
                         .map((expense) => _buildTransactionItem(expense))
                         .toList(),
               ),
@@ -177,7 +268,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }) {
     return Container(
       width: isFullWidth ? double.infinity : null,
-      padding: EdgeInsets.all(20),
+      padding: EdgeInsets.all(16), // Reduced padding
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
@@ -192,29 +283,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 24),
-              SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              Icon(icon, color: color, size: 20), // Reduced icon size
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-          SizedBox(height: 10),
-          Text(
-            '₹${amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: isFullWidth ? 24 : 20,
-              fontWeight: FontWeight.bold,
-              color: color,
+          SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '₹${_formatAmount(amount)}',
+              style: TextStyle(
+                fontSize: isFullWidth ? 24 : 18, // Reduced font size
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Helper method to format large amounts
+  String _formatAmount(double amount) {
+    if (amount >= 10000000) {
+      return '${(amount / 10000000).toStringAsFixed(1)}Cr';
+    } else if (amount >= 100000) {
+      return '${(amount / 100000).toStringAsFixed(1)}L';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(1)}K';
+    } else {
+      return amount.toStringAsFixed(0);
+    }
   }
 
   Widget _buildQuickActionButton(
@@ -243,6 +356,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -292,22 +406,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Text(
                   expense.title,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 5),
                 Text(
                   expense.category,
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 3),
+                Text(
+                  '${expense.date.day}/${expense.date.month}/${expense.date.year}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ],
             ),
           ),
-          Text(
-            '${expense.type == 'income' ? '+' : '-'}₹${expense.amount.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: expense.type == 'income' ? Colors.green : Colors.red,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              FittedBox(
+                child: Text(
+                  '${expense.type == 'income' ? '+' : '-'}₹${_formatAmount(expense.amount)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: expense.type == 'income' ? Colors.green : Colors.red,
+                  ),
+                ),
+              ),
+              SizedBox(height: 5),
+              GestureDetector(
+                onTap: () => _deleteExpense(expense),
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -6,7 +6,7 @@ import 'package:money_tracking/Model/hive.dart';
 class AddExpenseScreen extends StatefulWidget {
   final String type;
 
-  AddExpenseScreen({required this.type});
+  const AddExpenseScreen({super.key, required this.type});
 
   @override
   _AddExpenseScreenState createState() => _AddExpenseScreenState();

@@ -6,6 +6,8 @@ import 'package:money_tracking/dashboard.dart';
 import 'package:money_tracking/signup.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }

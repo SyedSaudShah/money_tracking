@@ -6,7 +6,7 @@ import 'package:money_tracking/Model/hive.dart';
 class ProfileScreen extends StatefulWidget {
   final VoidCallback onLogout;
 
-  ProfileScreen({required this.onLogout});
+  const ProfileScreen({super.key, required this.onLogout});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();

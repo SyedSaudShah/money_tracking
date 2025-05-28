@@ -5,6 +5,8 @@ import 'package:money_tracking/Model/hive.dart';
 import 'package:money_tracking/dashboard.dart';
 
 class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
+
   @override
   _SignupScreenState createState() => _SignupScreenState();
 }

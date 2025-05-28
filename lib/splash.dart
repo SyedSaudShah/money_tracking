@@ -4,6 +4,8 @@ import 'package:money_tracking/dashboard.dart';
 import 'package:money_tracking/login.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }

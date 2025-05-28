@@ -7,7 +7,7 @@ import 'package:money_tracking/Model/hive.dart';
 class AnalyticsScreen extends StatefulWidget {
   final List<Expense> userExpenses;
 
-  AnalyticsScreen({required this.userExpenses});
+  const AnalyticsScreen({super.key, required this.userExpenses});
 
   @override
   _AnalyticsScreenState createState() => _AnalyticsScreenState();
@@ -129,7 +129,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     height: 200,
                     child:
                         monthlyData.isEmpty
